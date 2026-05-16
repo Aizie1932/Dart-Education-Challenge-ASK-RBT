@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Education Dart Challenge</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* ============================================
+   CSS RESET & BASE
+   ============================================ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#070b1a;--bg2:#0d1333;--cyan:#00f0ff;--purple:#b347ea;
+  --blue:#0066ff;--green:#00ff88;--red:#ff3366;--gold:#ffd700;
+  --glass:rgba(255,255,255,0.05);--glassB:rgba(255,255,255,0.1);
+  --fontH:'Orbitron',monospace;--fontB:'Rajdhani',sans-serif;
+  --glow-cyan:0 0 20px rgba(0,240,255,.4);
+  --glow-purple:0 0 20px rgba(179,71,234,.4);
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:var(--fontB);background:var(--bg);color:#e0e8ff;overflow-x:hidden;min-height:100vh}
+button{cursor:pointer;font-family:var(--fontB);border:none;outline:none}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--fontH);letter-spacing:2px}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:3px}
+
+/* ============================================
+   LOADING SCREEN
+   ============================================ */
+#loadingScreen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s}
+#loadingScreen.hide{opacity:0;pointer-events:none}
+.loader-ring{width:80px;height:80px;border:4px solid transparent;border-top-color:var(--cyan);border-right-color:var(--purple);border-radius:50%;animation:spin 1s linear infinite}
+.loader-text{margin-top:24px;font-family:var(--fontH);font-size:.9rem;color:var(--cyan);animation:pulse 1.5s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ============================================
+   PARTICLE CANVAS (BACKGROUND)
+   ============================================ */
+#particleCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ============================================
+   SCREEN SYSTEM
+   ============================================ */
+.screen{position:fixed;inset:0;z-index:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.screen.active{display:flex;animation:fadeIn .5s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================================
+   MAIN MENU
+   ============================================ */
+.menu-title{font-family:var(--fontH);font-size:clamp(1.8rem,5vw,3.5rem);font-weight:900;text-align:center;background:linear-gradient(135deg,var(--cyan),var(--purple),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;text-shadow:none;filter:drop-shadow(0 0 30px rgba(0,240,255,.3))}
+.menu-subtitle{font-size:clamp(.85rem,2vw,1.2rem);color:rgba(255,255,255,.5);text-align:center;margin-bottom:40px;letter-spacing:3px;font-weight:300}
+.subject-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:900px;width:100%}
+.subject-card{background:var(--glass);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px 24px;cursor:pointer;transition:all .3s ease;position:relative;overflow:hidden}
+.subject-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,240,255,.08),rgba(179,71,234,.08));opacity:0;transition:opacity .3s}
+.subject-card:hover{transform:translateY(-6px) scale(1.02);border-color:var(--cyan);box-shadow:var(--glow-cyan)}
+.subject-card:hover::before{opacity:1}
+.subject-card:active{transform:scale(.97)}
+.subject-icon{font-size:2.2rem;margin-bottom:12px;display:block}
+.subject-name{font-family:var(--fontH);font-size:1rem;font-weight:700;margin-bottom:6px;color:#fff}
+.subject-desc{font-size:.82rem;color:rgba(255,255,255,.5);line-height:1.4}
+.subject-card:nth-child(1) .subject-icon{color:var(--cyan)}
+.subject-card:nth-child(2) .subject-icon{color:var(--purple)}
+.subject-card:nth-child(3) .subject-icon{color:var(--gold)}
+.subject-card:nth-child(4) .subject-icon{color:var(--green)}
+
+/* ============================================
+   GAME SETUP
+   ============================================ */
+.setup-box{background:var(--glass);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:36px;max-width:500px;width:100%;backdrop-filter:blur(20px)}
+.setup-box h2{text-align:center;font-size:1.3rem;margin-bottom:24px;color:var(--cyan)}
+.input-group{margin-bottom:18px}
+.input-group label{display:block;font-size:.85rem;color:rgba(255,255,255,.6);margin-bottom:6px;font-weight:600}
+.input-group input{width:100%;padding:12px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#fff;font-size:1rem;font-family:var(--fontB);transition:border-color .3s}
+.input-group input:focus{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,240,255,.2)}
+.btn{padding:14px 32px;border-radius:12px;font-size:1rem;font-weight:700;letter-spacing:1px;transition:all .25s;position:relative;overflow:hidden}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#000}
+.btn-primary:hover{box-shadow:0 0 30px rgba(0,240,255,.5);transform:translateY(-2px)}
+.btn-secondary{background:var(--glassB);color:var(--cyan);border:1px solid rgba(0,240,255,.3)}
+.btn-secondary:hover{background:rgba(0,240,255,.15)}
+.btn-danger{background:linear-gradient(135deg,var(--red),#cc0044);color:#fff}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#ff8c00);color:#000}
+.btn-full{width:100%}
+.btn-sm{padding:8px 18px;font-size:.85rem;border-radius:8px}
+
+/* ============================================
+   GAME SCREEN
+   ============================================ */
+#gameScreen{padding:10px;justify-content:flex-start;align-items:stretch}
+.game-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--glass);border-radius:12px;margin-bottom:10px;flex-wrap:wrap;gap:8px;min-height:50px}
+.game-header-left,.game-header-right{display:flex;align-items:center;gap:10px}
+.header-btn{width:36px;height:36px;border-radius:8px;background:var(--glassB);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .2s}
+.header-btn:hover{background:rgba(0,240,255,.2)}
+.sound-slider{width:70px;accent-color:var(--cyan);height:4px}
+
+.game-body{display:grid;grid-template-columns:1fr 320px;gap:12px;flex:1;min-height:0;max-height:calc(100vh - 140px)}
+@media(max-width:900px){.game-body{grid-template-columns:1fr;max-height:none}}
+
+/* Panel kiri: Soalan */
+.question-panel{display:flex;flex-direction:column;gap:12px}
+.team-scores{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.team-card{padding:14px 18px;border-radius:12px;background:var(--glass);border:2px solid transparent;transition:all .4s;position:relative;overflow:hidden}
+.team-card.active-team{border-color:var(--cyan);box-shadow:var(--glow-cyan)}
+.team-card.active-team::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--cyan);animation:scanline 2s linear infinite}
+@keyframes scanline{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+.team-card.team-a{border-left:3px solid var(--cyan)}
+.team-card.team-b{border-left:3px solid var(--purple)}
+.team-name{font-family:var(--fontH);font-size:.8rem;color:rgba(255,255,255,.5);margin-bottom:4px}
+.team-score-val{font-family:var(--fontH);font-size:1.8rem;font-weight:900;color:#fff}
+.team-a .team-score-val{color:var(--cyan)}
+.team-b .team-score-val{color:var(--purple)}
+.team-turn{font-size:.7rem;color:var(--green);margin-top:4px;opacity:0;transition:opacity .3s}
+.team-card.active-team .team-turn{opacity:1}
+
+/* Soalan kad */
+.question-card{background:var(--glass);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;backdrop-filter:blur(10px);flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.q-meta{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.q-number{font-family:var(--fontH);font-size:.75rem;color:var(--cyan);background:rgba(0,240,255,.1);padding:4px 10px;border-radius:6px}
+.q-diff{font-size:.7rem;padding:3px 8px;border-radius:4px;font-weight:700;letter-spacing:1px}
+.q-diff.rendah{background:rgba(0,255,136,.15);color:var(--green)}
+.q-diff.sederhana{background:rgba(255,215,0,.15);color:var(--gold)}
+.q-diff.kbat{background:rgba(255,51,102,.15);color:var(--red)}
+.q-dd{font-size:.7rem;padding:3px 8px;border-radius:4px;font-weight:700;background:rgba(179,71,234,.2);color:var(--purple);animation:ddPulse 1.5s infinite}
+@keyframes ddPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.q-text{font-size:clamp(.95rem,2vw,1.15rem);line-height:1.6;color:#fff;margin-bottom:20px;font-weight:500}
+.q-timer{position:absolute;top:16px;right:16px;font-family:var(--fontH);font-size:1.4rem;font-weight:700;color:var(--cyan)}
+.q-timer.danger{color:var(--red);animation:timerShake .3s infinite}
+@keyframes timerShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:auto}
+@media(max-width:600px){.options-grid{grid-template-columns:1fr}}
+.option-btn{padding:14px 18px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#e0e8ff;font-size:.95rem;font-weight:600;text-align:left;transition:all .25s;position:relative;overflow:hidden;cursor:pointer;font-family:var(--fontB)}
+.option-btn:hover{border-color:var(--cyan);background:rgba(0,240,255,.08);transform:translateX(4px)}
+.option-btn.correct{border-color:var(--green)!important;background:rgba(0,255,136,.15)!important;color:var(--green)!important;animation:correctPop .4s}
+.option-btn.wrong{border-color:var(--red)!important;background:rgba(255,51,102,.15)!important;color:var(--red)!important;animation:shake .4s}
+.option-btn.disabled{pointer-events:none;opacity:.5}
+@keyframes correctPop{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.option-label{display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.1);text-align:center;line-height:24px;font-size:.75rem;margin-right:10px;font-weight:700}
+
+/* Panel kanan: Dartboard */
+.dart-panel{display:flex;flex-direction:column;align-items:center;gap:10px}
+.dartboard-wrap{position:relative;width:100%;max-width:320px;aspect-ratio:1}
+#dartboardCanvas{width:100%;height:100%;border-radius:50%}
+.dart-result{font-family:var(--fontH);font-size:1.6rem;font-weight:900;min-height:40px;text-align:center;transition:all .3s}
+.dart-result.hit{color:var(--green);text-shadow:0 0 20px rgba(0,255,136,.5)}
+.dart-result.bullseye{color:var(--gold);text-shadow:0 0 30px rgba(255,215,0,.6);font-size:2rem;animation:bullseyeAnim .6s}
+@keyframes bullseyeAnim{0%{transform:scale(0)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+.progress-bar{width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:3px;transition:width .4s}
+
+/* ============================================
+   FEEDBACK OVERLAY
+   ============================================ */
+.feedback-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.7);backdrop-filter:blur(5px)}
+.feedback-overlay.show{display:flex;animation:fadeIn .3s}
+.feedback-text{font-family:var(--fontH);font-size:clamp(2rem,6vw,4rem);font-weight:900}
+.feedback-text.correct-fb{color:var(--green);text-shadow:0 0 40px rgba(0,255,136,.5)}
+.feedback-text.wrong-fb{color:var(--red);text-shadow:0 0 40px rgba(255,51,102,.5)}
+.feedback-sub{font-size:1.1rem;margin-top:8px;color:rgba(255,255,255,.6)}
+
+/* ============================================
+   CONFETTI CANVAS
+   ============================================ */
+#confettiCanvas{position:fixed;inset:0;z-index:99;pointer-events:none}
+
+/* ============================================
+   RESULTS SCREEN
+   ============================================ */
+.result-box{background:var(--glass);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:36px;max-width:600px;width:100%;text-align:center;backdrop-filter:blur(20px)}
+.result-crown{font-size:3.5rem;margin-bottom:12px}
+.result-winner{font-family:var(--fontH);font-size:1.6rem;color:var(--gold);margin-bottom:24px}
+.result-scores{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.result-team{padding:18px;border-radius:12px;background:rgba(255,255,255,.04)}
+.result-team-label{font-size:.8rem;color:rgba(255,255,255,.5);margin-bottom:4px}
+.result-team-score{font-family:var(--fontH);font-size:2rem;font-weight:900}
+.result-team.winner-team{border:2px solid var(--gold);box-shadow:0 0 20px rgba(255,215,0,.3)}
+.result-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+/* ============================================
+   RANDOM PICKER WHEEL
+   ============================================ */
+.picker-overlay{position:fixed;inset:0;z-index:110;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8);backdrop-filter:blur(8px)}
+.picker-overlay.show{display:flex}
+.picker-box{background:var(--bg2);border:2px solid var(--cyan);border-radius:20px;padding:30px;max-width:400px;width:90%;text-align:center}
+#pickerCanvas{width:260px;height:260px;margin:16px auto;display:block}
+.picker-result{font-family:var(--fontH);font-size:1.4rem;color:var(--gold);min-height:36px;margin:12px 0}
+
+/* ============================================
+   PAUSE OVERLAY
+   ============================================ */
+.pause-overlay{position:fixed;inset:0;z-index:105;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);flex-direction:column;gap:20px}
+.pause-overlay.show{display:flex}
+.pause-title{font-family:var(--fontH);font-size:2.5rem;color:var(--cyan)}
+
+/* ============================================
+   COUNTDOWN OVERLAY
+   ============================================ */
+.countdown-overlay{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.9)}
+.countdown-overlay.show{display:flex}
+.countdown-num{font-family:var(--fontH);font-size:8rem;font-weight:900;color:var(--cyan);text-shadow:0 0 60px rgba(0,240,255,.5);animation:countPop .8s ease}
+@keyframes countPop{0%{transform:scale(2);opacity:0}50%{transform:scale(.9);opacity:1}100%{transform:scale(1)}}
+
+/* ============================================
+   FLOATING ACTION BUTTONS
+   ============================================ */
+.fab-container{position:fixed;bottom:20px;right:20px;z-index:50;display:flex;flex-direction:column;gap:8px}
+.fab{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .2s;box-shadow:0 4px 15px rgba(0,0,0,.3)}
+.fab:hover{transform:scale(1.1)}
+.fab-fs{background:rgba(0,240,255,.2);color:var(--cyan);border:1px solid rgba(0,240,255,.3)}
+.fab-pick{background:rgba(179,71,234,.2);color:var(--purple);border:1px solid rgba(179,71,234,.3)}
+.fab-sound{background:rgba(0,255,136,.2);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+
+/* ============================================
+   NEON DECORATIONS
+   ============================================ */
+.neon-line{height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);margin:16px 0;opacity:.4}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media(max-width:600px){
+  .game-body{grid-template-columns:1fr}
+  .dart-panel{order:-1}
+  .dartboard-wrap{max-width:220px}
+  .team-scores{grid-template-columns:1fr 1fr}
+  .team-score-val{font-size:1.3rem}
+  .question-card{padding:16px}
+  .options-grid{grid-template-columns:1fr}
+  .subject-grid{grid-template-columns:1fr}
+  .fab-container{bottom:10px;right:10px}
+}
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+.toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:10px;font-size:.9rem;font-weight:600;animation:toastIn .4s ease;backdrop-filter:blur(10px)}
+.toast.info{background:rgba(0,240,255,.15);color:var(--cyan);border:1px solid rgba(0,240,255,.3)}
+.toast.success{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+.toast.error{background:rgba(255,51,102,.15);color:var(--red);border:1px solid rgba(255,51,102,.3)}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ============================================
+   ACCESSIBILITY - REDUCED MOTION
+   ============================================ */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ==========================================
+     LOADING SCREEN
+     ========================================== -->
+<div id="loadingScreen">
+  <div class="loader-ring"></div>
+  <div class="loader-text">SYSTEM INITIALIZING...</div>
+</div>
+
+<!-- ==========================================
+     PARTICLE BACKGROUND CANVAS
+     ========================================== -->
+<canvas id="particleCanvas"></canvas>
+
+<!-- ==========================================
+     CONFETTI CANVAS
+     ========================================== -->
+<canvas id="confettiCanvas"></canvas>
+
+<!-- ==========================================
+     MAIN MENU SCREEN
+     ========================================== -->
+<div id="menuScreen" class="screen">
+  <div style="text-align:center;max-width:900px;width:100%">
+    <h1 class="menu-title">EDUCATION DART CHALLENGE</h1>
+    <p class="menu-subtitle">Interactive Classroom Quiz Game</p>
+    <div class="neon-line"></div>
+    <div class="subject-grid" style="margin-top:20px">
+      <div class="subject-card" onclick="selectSubject('ask_t1')" role="button" tabindex="0" aria-label="ASK Tingkatan 1">
+        <i class="fas fa-laptop-code subject-icon"></i>
+        <div class="subject-name">ASK Tingkatan 1</div>
+        <div class="subject-desc">Pemikiran Komputasional, Perwakilan Data, Algoritma</div>
+      </div>
+      <div class="subject-card" onclick="selectSubject('ask_t2')" role="button" tabindex="0" aria-label="ASK Tingkatan 2">
+        <i class="fas fa-code subject-icon"></i>
+        <div class="subject-name">ASK Tingkatan 2</div>
+        <div class="subject-desc">Perwakilan Data, Algoritma, Kod Arahan Python</div>
+      </div>
+      <div class="subject-card" onclick="selectSubject('ask_t3')" role="button" tabindex="0" aria-label="ASK Tingkatan 3">
+        <i class="fas fa-database subject-icon"></i>
+        <div class="subject-name">ASK Tingkatan 3</div>
+        <div class="subject-desc">Atur Cara, Kriptografi, Search & Sort, Pangkalan Data</div>
+      </div>
+      <div class="subject-card" onclick="selectSubject('rbt_t3')" role="button" tabindex="0" aria-label="RBT Tingkatan 3">
+        <i class="fas fa-cogs subject-icon"></i>
+        <div class="subject-name">RBT Tingkatan 3</div>
+        <div class="subject-desc">Reka Bentuk Mekatronik, Pembangunan Produk</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     GAME SETUP SCREEN
+     ========================================== -->
+<div id="setupScreen" class="screen">
+  <div class="setup-box">
+    <h2><i class="fas fa-users" style="margin-right:8px"></i>SEDIA BERTEMPUR</h2>
+    <div class="input-group">
+      <label><i class="fas fa-shield-halved" style="color:var(--cyan)"></i> Kumpulan A (Nama)</label>
+      <input type="text" id="teamAName" value="K1 - Lelaki" maxlength="20">
+    </div>
+    <div class="input-group">
+      <label><i class="fas fa-shield-halved" style="color:var(--purple)"></i> Kumpulan B (Nama)</label>
+      <input type="text" id="teamBName" value="K2 - Perempuan" maxlength="20">
+    </div>
+    <div class="input-group">
+      <label><i class="fas fa-clock" style="color:var(--gold)"></i> Masa Soalan (saat)</label>
+      <input type="number" id="timerSetting" value="30" min="10" max="120">
+    </div>
+    <div class="input-group">
+      <label><i class="fas fa-list-ol" style="color:var(--green)"></i> Bilangan Soalan</label>
+      <input type="number" id="questionCount" value="15" min="5" max="50">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="startGame()" style="margin-top:12px">
+      <i class="fas fa-play"></i> MULA PERMAINAN
+    </button>
+    <button class="btn btn-secondary btn-full" onclick="showScreen('menuScreen')" style="margin-top:8px">
+      <i class="fas fa-arrow-left"></i> Kembali
+    </button>
+  </div>
+</div>
+
+<!-- ==========================================
+     GAME SCREEN
+     ========================================== -->
+<div id="gameScreen" class="screen" style="justify-content:flex-start;padding:8px">
+  <!-- Header Bar -->
+  <div class="game-header">
+    <div class="game-header-left">
+      <button class="header-btn" onclick="togglePause()" title="Jeda" aria-label="Jeda"><i class="fas fa-pause"></i></button>
+      <button class="header-btn" onclick="restartGame()" title="Mula Semula" aria-label="Mula Semula"><i class="fas fa-redo"></i></button>
+      <span style="font-family:var(--fontH);font-size:.75rem;color:var(--cyan)" id="subjectLabel">ASK T1</span>
+    </div>
+    <div style="font-family:var(--fontH);font-size:.85rem;color:rgba(255,255,255,.6)" id="questionProgress">1/15</div>
+    <div class="game-header-right">
+      <i class="fas fa-volume-up" style="color:var(--cyan);font-size:.8rem" id="soundIcon"></i>
+      <input type="range" class="sound-slider" id="volumeSlider" min="0" max="100" value="60" oninput="setVolume(this.value)">
+      <button class="header-btn" onclick="toggleFullscreen()" title="Skrin Penuh" aria-label="Skrin Penuh"><i class="fas fa-expand"></i></button>
+    </div>
+  </div>
+
+  <!-- Game Body -->
+  <div class="game-body">
+    <!-- Kiri: Soalan -->
+    <div class="question-panel">
+      <div class="team-scores">
+        <div class="team-card team-a" id="teamACard">
+          <div class="team-name" id="teamALabel">K1 - Lelaki</div>
+          <div class="team-score-val" id="teamAScore">0</div>
+          <div class="team-turn"><i class="fas fa-arrow-right"></i> Giliran Anda</div>
+        </div>
+        <div class="team-card team-b" id="teamBCard">
+          <div class="team-name" id="teamBLabel">K2 - Perempuan</div>
+          <div class="team-score-val" id="teamBScore">0</div>
+          <div class="team-turn"><i class="fas fa-arrow-right"></i> Giliran Anda</div>
+        </div>
+      </div>
+
+      <div class="question-card" id="questionCard">
+        <div class="q-meta">
+          <span class="q-number" id="qNumber">S1</span>
+          <span class="q-diff rendah" id="qDiff">RENDAH</span>
+          <span class="q-dd" id="qDD" style="display:none">DOUBLE DART</span>
+        </div>
+        <div class="q-timer" id="qTimer">30</div>
+        <div class="q-text" id="qText">Soalan akan dimuatkan...</div>
+        <div class="options-grid" id="optionsGrid"></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Kanan: Dartboard -->
+    <div class="dart-panel">
+      <div class="dartboard-wrap">
+        <canvas id="dartboardCanvas" width="400" height="400"></canvas>
+      </div>
+      <div class="dart-result" id="dartResult"></div>
+      <button class="btn btn-gold btn-sm" onclick="throwDartManual()" id="dartBtn" style="display:none">
+        <i class="fas fa-bullseye"></i> BALING DART
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     RESULTS SCREEN
+     ========================================== -->
+<div id="resultScreen" class="screen">
+  <div class="result-box">
+    <div class="result-crown" id="resultCrown">&#x1F3C6;</div>
+    <div class="result-winner" id="resultWinner">KUMPULAN MENANG</div>
+    <div class="result-scores">
+      <div class="result-team" id="resultTeamA">
+        <div class="result-team-label" id="resultALabel">K1</div>
+        <div class="result-team-score" id="resultAScore" style="color:var(--cyan)">0</div>
+      </div>
+      <div class="result-team" id="resultTeamB">
+        <div class="result-team-label" id="resultBLabel">K2</div>
+        <div class="result-team-score" id="resultBScore" style="color:var(--purple)">0</div>
+      </div>
+    </div>
+    <div class="result-btns">
+      <button class="btn btn-primary" onclick="restartGame()"><i class="fas fa-redo"></i> Main Semula</button>
+      <button class="btn btn-secondary" onclick="showScreen('menuScreen')"><i class="fas fa-home"></i> Menu Utama</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     FEEDBACK OVERLAY
+     ========================================== -->
+<div class="feedback-overlay" id="feedbackOverlay">
+  <div class="feedback-text" id="feedbackText"></div>
+  <div class="feedback-sub" id="feedbackSub"></div>
+</div>
+
+<!-- ==========================================
+     PAUSE OVERLAY
+     ========================================== -->
+<div class="pause-overlay" id="pauseOverlay">
+  <div class="pause-title">JEDA</div>
+  <button class="btn btn-primary" onclick="togglePause()"><i class="fas fa-play"></i> Sambung</button>
+  <button class="btn btn-danger" onclick="restartGame()"><i class="fas fa-redo"></i> Mula Semula</button>
+  <button class="btn btn-secondary" onclick="showScreen('menuScreen')"><i class="fas fa-home"></i> Menu Utama</button>
+</div>
+
+<!-- ==========================================
+     COUNTDOWN OVERLAY
+     ========================================== -->
+<div class="countdown-overlay" id="countdownOverlay">
+  <div class="countdown-num" id="countdownNum">3</div>
+</div>
+
+<!-- ==========================================
+     RANDOM PICKER OVERLAY
+     ========================================== -->
+<div class="picker-overlay" id="pickerOverlay">
+  <div class="picker-box">
+    <h3 style="font-family:var(--fontH);color:var(--purple);margin-bottom:8px">RODA RAWAK</h3>
+    <canvas id="pickerCanvas" width="260" height="260"></canvas>
+    <div class="picker-result" id="pickerResult"></div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="spinPicker()"><i class="fas fa-sync"></i> Pusing</button>
+      <button class="btn btn-secondary btn-sm" onclick="closePicker()"><i class="fas fa-times"></i> Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     TOAST CONTAINER
+     ========================================== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ==========================================
+     FLOATING ACTION BUTTONS
+     ========================================== -->
+<div class="fab-container">
+  <button class="fab fab-pick" onclick="openPicker()" title="Pilih Murid Rawak" aria-label="Pilih Murid Rawak"><i class="fas fa-random"></i></button>
+  <button class="fab fab-sound" onclick="toggleMute()" id="muteBtn" title="Bunyi" aria-label="Bunyi"><i class="fas fa-volume-up"></i></button>
+  <button class="fab fab-fs" onclick="toggleFullscreen()" title="Skrin Penuh" aria-label="Skrin Penuh"><i class="fas fa-expand"></i></button>
+</div>
+
+<!-- ==========================================
+     JAVASCRIPT
+     ========================================== -->
+<script>
+// ============================================================
+// SOALAN KUIZ - DATA DARIPADA PDF YANG DIBERIKAN
+// Format: { q:soalan, o:[A,B,C,D], a:indeksJawapan(0-3), d:aras, dd:doubleDart }
+// ============================================================
+
+const QUESTIONS = {
+  // === ASK TINGKATAN 1 ===
+  ask_t1: [
+    {q:"Apakah maksud pemikiran komputasional?",o:["Proses pemikiran manusia berbantukan mesin menggunakan konsep sains komputer","Kemahiran menggunakan komputer untuk bermain permainan","Cara membuat kerja rumah dengan bantuan internet","Kaedah untuk menaip dengan pantas"],a:0,d:"Rendah"},
+    {q:"Berapakah jumlah teknik dalam pemikiran komputasional?",o:["2","3","4","5"],a:2,d:"Rendah"},
+    {q:"Teknik memecahkan masalah kompleks kepada bahagian kecil dipanggil...",o:["Pengecaman Corak","Leraian","Peniskalaan","Pengitlakan"],a:1,d:"Rendah"},
+    {q:"Teknik mengenal pasti corak atau persamaan dalam masalah berbeza dipanggil...",o:["Leraian","Peniskalaan","Pengecaman Corak","Pengitlakan"],a:2,d:"Rendah"},
+    {q:"Teknik mengetepikan aspek kurang penting dan fokus kepada aspek penting dipanggil...",o:["Pengecaman Corak","Leraian","Pengitlakan","Peniskalaan"],a:3,d:"Rendah"},
+    {q:"Teknik membina model atau formula untuk masalah serupa dipanggil...",o:["Peniskalaan","Leraian","Pengecaman Corak","Pengitlakan"],a:3,d:"Rendah"},
+    {q:"Komputer menyimpan semua data dalam bentuk...",o:["Nombor perpuluhan (0-9)","Nombor perduaan (0 dan 1)","Huruf abjad","Simbol khas"],a:1,d:"Rendah"},
+    {q:"Sistem perduaan juga dikenali sebagai...",o:["Sistem Asas 8","Sistem Asas 10","Sistem Asas 2","Sistem Asas 16"],a:2,d:"Rendah"},
+    {q:"Dalam sistem perduaan, digit 0 mewakili ___ dan 1 mewakili ___.",o:["Panas/Sejuk","Off/On","Lambat/Pantas","Luar/Dalam"],a:1,d:"Rendah"},
+    {q:"Apakah nilai perpuluhan bagi nombor perduaan 1011?",o:["9","10","11","12"],a:2,d:"Rendah"},
+    {q:"Nilai tempat dalam sistem perduaan bermula dari kanan ialah...",o:["1, 3, 6, 9, 12","1, 2, 4, 8, 16","1, 10, 100, 1000","2, 4, 6, 8, 10"],a:1,d:"Rendah"},
+    {q:"Piksel ialah...",o:["Saiz keseluruhan imej","Elemen terkecil dalam paparan imej digital","Nama format fail imej","Jenis warna dalam imej"],a:1,d:"Rendah"},
+    {q:"Imej digital dengan kedalaman warna 1 bit boleh mewakili berapa warna?",o:["1 warna","2 warna","4 warna","8 warna"],a:1,d:"Rendah",dd:true},
+    {q:"1 bait = ___ bit",o:["4","8","16","32"],a:1,d:"Rendah"},
+    {q:"Algoritma ialah...",o:["Nama perisian komputer","Tatacara yang menyatakan tindakan dan urutan untuk menyelesaikan masalah","Bahasa pengaturcaraan","Jenis carta matematik"],a:1,d:"Rendah"},
+    {q:"Dua cara perwakilan algoritma ialah...",o:["Graf dan jadual","Carta pai dan carta bar","Carta alir dan pseudokod","Lukisan dan gambar foto"],a:2,d:"Rendah"},
+    {q:"Dalam pseudokod, perkataan manakah menandakan permulaan algoritma?",o:["TAMAT","INPUT","MULA","OUTPUT"],a:2,d:"Rendah"},
+    {q:"Tiga jenis struktur kawalan pilihan ialah...",o:["UNTUK, SELAGI, ULANG-SEHINGGA","Tunggal, Dwipilihan, Pelbagai Pilihan","Input, Proses, Output","MULA, TINDAKAN, TAMAT"],a:1,d:"Rendah"},
+    {q:"Struktur kawalan UNTUK (FOR) digunakan untuk...",o:["Memilih antara dua tindakan","Melaksanakan langkah berulang berdasarkan pembilangan tertentu","Memaparkan output","Membaca input"],a:1,d:"Rendah"},
+    {q:"Apakah maksud ralat logik dalam algoritma?",o:["Kesilapan ejaan dalam pseudokod","Ralat yang menyebabkan output tidak diingini","Masalah pada papan kekunci","Kegagalan simpan data"],a:1,d:"Rendah"},
+    {q:"Dua teknik semakan semula untuk mengesan ralat ialah...",o:["Cetak dan simpan","Semakan meja dan langkah demi langkah","Debug dan compile","Copy dan paste"],a:1,d:"Rendah"},
+    {q:"Tukarkan nombor perduaan 10111010 kepada perpuluhan.",o:["180","184","186","188"],a:2,d:"Sederhana"},
+    {q:"Imej dengan kedalaman warna 8 bit boleh mewakili berapa warna?",o:["16","64","256","512"],a:2,d:"Sederhana"},
+    {q:"Format fail audio yang dibangunkan oleh Microsoft dan IBM serta tidak dimampatkan ialah...",o:["MP3","MIDI","WAV","GIF"],a:2,d:"Sederhana"},
+    {q:"Apakah perbezaan utama antara audio mono dan stereo?",o:["Mono dua saluran, stereo satu","Mono satu saluran, stereo dua saluran","Stereo lebih kecil saiznya","Tiada perbezaan"],a:1,d:"Sederhana"},
+    {q:"Tukarkan perpuluhan 84 kepada perduaan.",o:["1010011","1010100","1011000","1001010"],a:1,d:"Sederhana"},
+    {q:"Dalam operasi tambah perduaan, 1 + 1 = ?",o:["0","1","10","11"],a:2,d:"Sederhana"},
+    {q:"Format MIDI berbeza daripada WAV kerana MIDI...",o:["Menyimpan bunyi besar","Tidak menyimpan bunyi sebenar, hanya arahan muzik","Hanya untuk suara manusia","Dibangunkan oleh Microsoft"],a:1,d:"Sederhana"},
+    {q:"SELAGI menguji syarat di ___ manakala ULANG-SEHINGGA menguji di ___.",o:["Akhir, awal","Awal, akhir","Tengah, awal","Awal, tengah"],a:1,d:"Sederhana",dd:true},
+    {q:"1 kilobait bersamaan dengan...",o:["100 bait","512 bait","1000 bait","1024 bait"],a:3,d:"Sederhana"}
+  ],
+
+  // === ASK TINGKATAN 2 ===
+  ask_t2: [
+    {q:"Sistem nombor perlapanan juga dikenali sebagai...",o:["Sistem Asas 10","Sistem Asas 8","Sistem Asas 2","Sistem Asas 16"],a:1,d:"Rendah"},
+    {q:"Digit yang digunakan dalam sistem perlapanan ialah...",o:["0 hingga 9","0 dan 1 sahaja","0 hingga 7","0 hingga F"],a:2,d:"Rendah"},
+    {q:"Nilai tempat dalam sistem perlapanan ialah...",o:["1, 10, 100, 1000","1, 2, 4, 8","1, 8, 64, 512","1, 16, 256, 4096"],a:2,d:"Rendah"},
+    {q:"Nombor perlapanan 2001 bersamaan perpuluhan berapa?",o:["1025","2001","128","512"],a:0,d:"Rendah"},
+    {q:"Untuk menukar perlapanan kepada perduaan, berapa digit perduaan mewakili SATU digit perlapanan?",o:["2 digit","3 digit","4 digit","8 digit"],a:1,d:"Rendah"},
+    {q:"ASCII ialah singkatan untuk...",o:["American System Computer Information Interface","American Standard Code for Information Interchange","Advanced Standard Code for Internet Interchange","Automated Standard Code for Information Input"],a:1,d:"Rendah"},
+    {q:"Sistem perenambelasan dikenali sebagai...",o:["Sistem Asas 8","Sistem oktal","Sistem heksadesimal atau Asas 16","Sistem desimal"],a:2,d:"Rendah"},
+    {q:"Dalam perenambelasan, digit 'F' mewakili perpuluhan...",o:["14","15","16","6"],a:1,d:"Rendah"},
+    {q:"Nilai tempat perenambelasan ialah...",o:["1, 8, 64, 512","1, 10, 100, 1000","1, 16, 256, 4096","1, 2, 4, 8"],a:2,d:"Rendah"},
+    {q:"Satu bait (byte) terdiri daripada berapa bit?",o:["4 bit","6 bit","8 bit","16 bit"],a:2,d:"Rendah"},
+    {q:"Algoritma ialah...",o:["Bahasa pengaturcaraan","Satu siri langkah untuk menyelesaikan masalah","Jenis ralat","Perisian pemprosesan kata"],a:1,d:"Rendah"},
+    {q:"Struktur kawalan pilihan bersarang bermaksud...",o:["Ulangan dalam ulangan","Pilihan dalam pilihan","Jujukan dalam jujukan","Pilihan tunggal"],a:1,d:"Rendah"},
+    {q:"Dalam struktur FOR, bilangan ulangan adalah...",o:["Tidak diketahui","Ditetapkan atau tertentu","Selalu sekali","Bergantung input"],a:1,d:"Rendah"},
+    {q:"Dalam Python, jenis data nombor BULAT ialah...",o:["float","boolean","string","integer"],a:3,d:"Rendah"},
+    {q:"Jenis data boolean mempunyai berapa nilai?",o:["Satu","Dua (True/False)","Tiga","Tidak terhad"],a:1,d:"Rendah"},
+    {q:"Dalam Python, fungsi paparan output ialah...",o:["input()","display()","print()","show()"],a:2,d:"Rendah"},
+    {q:"Perbezaan utama pemboleh ubah dan pemalar ialah...",o:["Panjang nama","Pemalar tidak boleh dikira","Nilai pemboleh ubah boleh berubah, pemalar tetap","Pemboleh ubah hanya untuk nombor"],a:2,d:"Rendah"},
+    {q:"Dalam Python, operator 'sama dengan' ialah...",o:["=","==","!="," >="],a:1,d:"Rendah"},
+    {q:"Operator logik AND mengembalikan Benar HANYA jika...",o:["Salah satu operan benar","Kedua-dua operan palsu","Kedua-dua operan benar","Operan pertama benar"],a:2,d:"Rendah"},
+    {q:"Dalam Python, input() berfungsi untuk...",o:["scan()","get()","read()","Mendapatkan input pengguna"],a:3,d:"Rendah"},
+    {q:"Nombor perpuluhan 179 dalam perlapanan ialah...",o:["236","263","326","362"],a:1,d:"Sederhana"},
+    {q:"Nombor perenambelasan 5A dalam perduaan ialah...",o:["01011010","10101010","01010110","11011010"],a:0,d:"Sederhana"},
+    {q:"Ralat yang menyebabkan output tidak dijangka dipanggil...",o:["Ralat sintaks","Ralat masa larian","Ralat logik","Ralat input"],a:2,d:"Sederhana"},
+    {q:"Simbol != bermaksud...",o:["Sama dengan","Lebih besar","Tidak sama dengan","Kurang daripada"],a:2,d:"Sederhana"},
+    {q:"Dalam Python, operator % (modulus) berfungsi untuk...",o:["Menghitung peratus","Mengira kuasa","Mendapatkan baki pembahagian","Hasil bahagi tanpa baki"],a:2,d:"Sederhana",dd:true},
+    {q:"Kod Python if-elif-else digunakan untuk...",o:["Ulangan FOR","Struktur pilihan if-elif-else","Jujukan","Ulangan WHILE"],a:1,d:"Sederhana"},
+    {q:"Fungsi len() dalam Python digunakan untuk...",o:["Ubah huruf besar","Menghitung bilangan aksara","Cetak output","Dapatkan input"],a:1,d:"Sederhana"},
+    {q:"Ralat masa larian menyebabkan...",o:["Ejaan salah","Output salah","Atur cara terhenti tiba-tiba","Fail rosak"],a:2,d:"Sederhana"},
+    {q:"Nombor perenambelasan 4F3 dalam perpuluhan ialah...",o:["1237","1257","1267","1277"],a:2,d:"Sederhana"},
+    {q:"Perkataan 'BEST' dalam perenambelasan ialah...",o:["42 44 52 53","42 45 53 54","43 45 53 54","42 45 54 53"],a:1,d:"KBAT"}
+  ],
+
+  // === ASK TINGKATAN 3 ===
+  ask_t3: [
+    {q:"Berapakah bilangan fasa dalam proses pembangunan atur cara?",o:["3 fasa","4 fasa","5 fasa","6 fasa"],a:2,d:"Rendah"},
+    {q:"Fasa PERTAMA dalam pembangunan atur cara ialah...",o:["Pengekodan","Reka Bentuk","Analisis Masalah","Dokumentasi"],a:2,d:"Rendah"},
+    {q:"Fasa yang melibatkan penulisan kod atur cara ialah...",o:["Analisis Masalah","Reka Bentuk","Pengekodan","Dokumentasi"],a:2,d:"Rendah"},
+    {q:"Berapakah bilangan teknik pemikiran komputasional?",o:["2","3","5","4"],a:3,d:"Rendah"},
+    {q:"Teknik memecahkan masalah besar kepada bahagian kecil ialah...",o:["Pengecaman Corak","Leraian","Peniskalaan","Pengitlakan"],a:1,d:"Rendah"},
+    {q:"Berapakah jenis ralat dalam pembangunan atur cara?",o:["2","3","4","5"],a:1,d:"Rendah"},
+    {q:"Ralat apabila kod tidak mengikut peraturan bahasa pengaturcaraan?",o:["Ralat Logik","Ralat Masa Larian","Ralat Sintaks","Ralat Pepijat"],a:2,d:"Rendah"},
+    {q:"Dokumentasi terbahagi kepada dua jenis...",o:["Awam dan Swasta","Dalaman dan Luaran","Digital dan Cetak","Teknikal dan Umum"],a:1,d:"Rendah"},
+    {q:"Fasa TERAKHIR dalam pembangunan atur cara ialah...",o:["Pengujian","Pengekodan","Reka Bentuk","Dokumentasi"],a:3,d:"Rendah"},
+    {q:"Apakah maksud kriptografi?",o:["Proses menyimpan fail","Sains penyamaran maklumat untuk keselamatan","Cara menyalin data","Proses memadam data"],a:1,d:"Rendah"},
+    {q:"Proses menukar teks biasa kepada teks disulit dipanggil...",o:["Nyahsulit","Compress","Penyulitan (Encrypt)","Dekod"],a:2,d:"Rendah"},
+    {q:"Caesar Cipher menggunakan kaedah...",o:["Menukar huruf kepada simbol","Menganjak huruf mengikut nilai kunci K","Menyusun semula huruf","Menulis dalam bentuk zig-zag"],a:1,d:"Rendah"},
+    {q:"Cipher yang menggunakan simbol grafik untuk mewakili huruf ialah...",o:["Caesar Cipher","Rail Fence Cipher","Reverse Cipher","Pigpen Cipher"],a:3,d:"Rendah"},
+    {q:"Rail Fence Cipher menyusun mesej dalam bentuk...",o:["Baris mendatar","Bentuk bulatan","Zigzag seperti pagar","Segitiga"],a:2,d:"Rendah"},
+    {q:"Proses menukar teks disulit kembali kepada teks biasa ialah...",o:["Penyulitan","Nyahsulit (Decrypt)","Compress","Upload"],a:1,d:"Rendah"},
+    {q:"Algoritma carian yang memeriksa setiap item satu persatu ialah...",o:["Binary Search","Bubble Sort","Linear Search","Bucket Sort"],a:2,d:"Rendah"},
+    {q:"Binary Search MESTI menggunakan senarai yang...",o:["Rawak tidak teratur","Telah diisih (teratur)","Nombor genap sahaja","Mengandungi teks sahaja"],a:1,d:"Rendah"},
+    {q:"Algoritma isihan yang menukar item bersebelahan secara berulang ialah...",o:["Bucket Sort","Binary Search","Linear Search","Bubble Sort"],a:3,d:"Rendah"},
+    {q:"Bucket Sort menggunakan ___ untuk mengumpulkan item.",o:["Baris","Baldi mengikut julat","Jadual tunggal","Tumpukan"],a:1,d:"Rendah"},
+    {q:"Apakah definisi pangkalan data yang paling tepat?",o:["Satu fail tunggal","Koleksi data saling berhubung secara berpusat","Program melayari internet","Perisian mencipta gambar"],a:1,d:"Rendah"},
+    {q:"SQL ialah singkatan...",o:["Simple Query Language","Software Quality Logic","Structured Query Language","System Queue Language"],a:2,d:"Rendah"},
+    {q:"Kekunci primer MESTI mempunyai nilai...",o:["Boleh berulang","Boleh kosong","Unik dan tidak boleh kosong","Nombor sahaja"],a:2,d:"Rendah"},
+    {q:"Kekunci asing berfungsi untuk...",o:["Menjana nombor automatik","Mengaitkan dua atau lebih entiti","Menyimpan teks panjang","Memadam rekod"],a:1,d:"Rendah"},
+    {q:"Perisian DBMS yang diajar dalam ASK T3 ialah...",o:["MySQL","Oracle","Microsoft Access","PostgreSQL"],a:2,d:"Rendah"},
+    {q:"Kekardinalan One to One (1:1) bermaksud...",o:["Satu entiti berhubung dengan banyak entiti","Banyak entiti berhubung banyak entiti","Satu entiti berhubung SATU entiti sahaja","Tiada hubungan"],a:2,d:"Rendah"},
+    {q:"Fasa Reka Bentuk menghasilkan...",o:["Kod Python","Pseudokod dan carta alir","Laporan peperiksaan","Penyahpepijatan"],a:1,d:"Sederhana"},
+    {q:"Jika Caesar Cipher K=3, huruf 'A' menjadi...",o:["B","C","D","E"],a:2,d:"Sederhana"},
+    {q:"Perbezaan UTAMA Linear Search dan Binary Search ialah...",o:["Linear lebih pantas","Binary tidak perlu senarai diisih","Linear tidak perlu diisih, Binary perlu diisih","Kedua-duanya perlu diisih"],a:2,d:"Sederhana"},
+    {q:"Pernyataan SQL untuk SEMUA data dari jadual MURID ialah...",o:["GET * FROM MURID","SELECT * FROM MURID","FIND ALL IN MURID","SHOW ALL MURID"],a:1,d:"Sederhana",dd:true},
+    {q:"Bubble Sort pada [5,3,8,1] selepas pass pertama menghasilkan...",o:["[1,3,5,8]","[3,5,1,8]","[1,5,3,8]","[3,1,5,8]"],a:1,d:"Sederhana"}
+  ],
+
+  // === RBT TINGKATAN 3 ===
+  rbt_t3: [
+    {q:"Reka bentuk mekatronik menggabungkan disiplin ilmu...",o:["Fizik, Kimia, Biologi, Matematik","Elektrik, Mekanikal, Elektronik, Kawalan, Pengaturcaraan","Seni, Muzik, Lukisan, Reka Bentuk","Perniagaan, Pemasaran, Kewangan"],a:1,d:"Rendah"},
+    {q:"Siapakah yang memperkenalkan konsep mekatronik pada tahun 1969?",o:["Elon Musk","Tetsuro Mori","Thomas Edison","Isaac Newton"],a:1,d:"Rendah"},
+    {q:"Istilah 'mekatronik' terhasil daripada gabungan...",o:["'media' dan 'tronik'","'meka' dan 'tronik'","'motor' dan 'elektronik'","'meja' dan 'teknik'"],a:1,d:"Rendah"},
+    {q:"Yang manakah BUKAN elemen mekatronik?",o:["Sistem mekanikal","Sistem elektrik","Sistem elektronik","Sistem biologi"],a:3,d:"Rendah"},
+    {q:"Produk mekatronik boleh berfungsi secara...",o:["Manual sahaja","Automatik atau separa automatik","Tenaga haiwan sahaja","Tanpa kawalan"],a:1,d:"Rendah"},
+    {q:"Contoh produk mekatronik ialah...",o:["Meja kayu biasa","Kerusi plastik","Mesin basuh automatik","Pembaris besi"],a:2,d:"Rendah"},
+    {q:"Komponen elektronik termasuk...",o:["Gear, spring, bebibir","Perintang, kapasitor, LED","Bateri, wayar, suis","Motor, pam, pendesak"],a:1,d:"Rendah"},
+    {q:"Pada kereta kawalan jauh, apakah yang mengawal halaju dan arah motor AT?",o:["Bateri","Motor AT","Mikropengawal dan sistem kawalan","Penderia inframerah"],a:2,d:"Rendah"},
+    {q:"Fungsi gambar rajah blok ialah...",o:["Menunjukkan warna produk","Menerangkan fungsi elemen produk mekatronik","Mengira kos","Merekod nama pengeluar"],a:1,d:"Rendah"},
+    {q:"Revolusi Industri 4.0 menggunakan konsep...",o:["Cyberphysical","Bioengineering","Hidroponik","Pertanian semula jadi"],a:0,d:"Rendah"},
+    {q:"Pada pintu gelangsar automatik, komponen yang mengesan pergerakan ialah...",o:["Motor AT","Pengubah","Penderia gerakan","Gear taji"],a:2,d:"Rendah"},
+    {q:"Revolusi Industri yang bermula dengan reka bentuk mekanikal ialah...",o:["1.0","2.0","3.0","4.0"],a:0,d:"Rendah"},
+    {q:"Tujuan penilaian kefungsian produk mekatronik ialah...",o:["Mengira kos bahan","Memastikan produk berfungsi dengan baik selepas diubah suai","Melakar semula","Mewarnakan produk"],a:1,d:"Rendah"},
+    {q:"Yang BUKAN bahasa pengaturcaraan ialah...",o:["Python","Java","Microsoft Word","C++"],a:2,d:"Rendah"},
+    {q:"Mikropengawal berfungsi untuk...",o:["Membekalkan tenaga","Mengawal pergerakan dan fungsi secara automatik","Menyambung wayar","Menghasilkan bunyi"],a:1,d:"Rendah"},
+    {q:"Produk yang BUKAN mekatronik ialah...",o:["Lif","Palang automatik","Kereta kawalan jauh","Meja belajar kayu biasa"],a:3,d:"Rendah"},
+    {q:"Penghasilan produk bertujuan memenuhi...",o:["Kehendak guru","Keperluan dan kehendak pelanggan","Keperluan pelajaran","Keperluan pengeluar"],a:1,d:"Rendah"},
+    {q:"Kajian keperluan pelanggan menggunakan...",o:["Borang kajian keperluan pelanggan","Kertas mahjong","Soal selidik media sosial","Wawancara sahaja"],a:0,d:"Rendah"},
+    {q:"Elemen reka bentuk ialah...",o:["Keseimbangan dan kontras","Garisan, Warna, Bentuk, Rupa, Tekstur, Saiz, Ruang, Nilai","Pengulangan dan penekanan","Harmoni dan kepelbagaian"],a:1,d:"Rendah"},
+    {q:"Garisan ialah...",o:["Kawasan kosong","Cantuman titik yang mempunyai panjang dan jarak","Kesan terang/gelap","Ruang dikelilingi garisan"],a:1,d:"Rendah"},
+    {q:"Warna dikategorikan kepada...",o:["Primer dan sekunder","Panas dan sejuk","Terang dan gelap","Asli dan buatan"],a:1,d:"Rendah"},
+    {q:"Jadual kerja dipersembahkan dalam bentuk...",o:["Rajah pai","Jadual seperti carta Gantt","Lakaran 3D","Laporan bertugas"],a:1,d:"Rendah"},
+    {q:"Yang BUKAN kos dalam bajet ialah...",o:["Kos bahan","Kos upah","Kos overhed","Kos hadiah peribadi"],a:3,d:"Rendah"},
+    {q:"Gergaji jig digunakan untuk...",o:["Mengapit bahan","Memotong papan lapis, MDF, akrilik","Kemasan permukaan","Mengukur panjang"],a:1,d:"Rendah"},
+    {q:"Langkah PERTAMA penghasilan produk ialah...",o:["Pengujian","Pendokumentasian","Kajian keperluan pelanggan","Menghasilkan lakaran ceraian"],a:2,d:"Rendah",dd:true},
+    {q:"Motor AT pada kereta kawalan jauh berfungsi untuk...",o:["Menghantar isyarat","Menggerakkan roda","Merekod arahan","Mengecas bateri"],a:1,d:"Sederhana"},
+    {q:"Aliran maklumat dalam gambar rajah blok ialah...",o:["Input-Output-Proses","Output-Proses-Input","Input-Proses-Output","Proses-Input-Output"],a:2,d:"Sederhana"},
+    {q:"RI 1.0 = reka bentuk mekanikal; RI 2.0 = tenaga elektrik. Pernyataan ini...",o:["Betul","Salah","Sebahagian betul","Tidak relevan"],a:0,d:"Sederhana"},
+    {q:"Gear taji pada Penggilap Kasut Magik berfungsi untuk...",o:["Membekalkan kuasa","Memindahkan kuasa dan memutarkan pad","Mengecas bateri","Mengesan kekerasan kasut"],a:1,d:"Sederhana"},
+    {q:"Pintu automatik memerlukan integrasi...",o:["Mekanikal sahaja","Elektrik sahaja","Semua elemen mekatronik","Elektronik sahaja"],a:2,d:"KBAT"}
+  ]
+};
+
+// ============================================================
+// GAME STATE - Semua pemboleh ubah permainan
+// ============================================================
+const G = {
+  subject: '',           // Subjek dipilih
+  questions: [],         // Senarai soalan permainan
+  currentQ: 0,          // Indeks soalan semasa
+  totalQ: 15,           // Jumlah soalan
+  teamA: { name: 'K1 - Lelaki', score: 0, streak: 0 },
+  teamB: { name: 'K2 - Perempuan', score: 0, streak: 0 },
+  currentTeam: 'A',     // 'A' atau 'B'
+  timer: 30,            // Masa soalan
+  timerMax: 30,
+  timerInterval: null,
+  paused: false,
+  answered: false,
+  dartThrown: false,
+  doubleDart: false,     // Flag soalan Double Dart
+  dartCount: 0,          // Bilangan balingan untuk soalan semasa
+  volume: 0.6,
+  muted: false,
+  soundEnabled: true
+};
+
+// ============================================================
+// SOUND SYSTEM - Sintesis bunyi menggunakan Web Audio API
+// ============================================================
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// Mainkan nada ringkas
+function playTone(freq, duration, type, vol) {
+  if (!G.soundEnabled || G.muted || !audioCtx) return;
+  const v = (vol || 0.3) * G.volume;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(v, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+// Bunyi jawapan betul - chime naik
+function soundCorrect() {
+  initAudio();
+  playTone(523, 0.15, 'sine', 0.3);
+  setTimeout(() => playTone(659, 0.15, 'sine', 0.3), 100);
+  setTimeout(() => playTone(784, 0.3, 'sine', 0.3), 200);
+}
+
+// Bunyi jawapan salah - buzzer
+function soundWrong() {
+  initAudio();
+  playTone(200, 0.3, 'sawtooth', 0.2);
+  setTimeout(() => playTone(150, 0.4, 'sawtooth', 0.2), 150);
+}
+
+// Bunyi baling dart - whoosh
+function soundDartThrow() {
+  initAudio();
+  if (!audioCtx) return;
+  const v = 0.2 * G.volume;
+  const bufferSize = audioCtx.sampleRate * 0.4;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  }
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 2000;
+  filter.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.4);
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(v, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  source.start();
+}
+
+// Bunyi dart terkena - impact
+function soundDartHit() {
+  initAudio();
+  playTone(800, 0.08, 'square', 0.2);
+  setTimeout(() => playTone(400, 0.15, 'sine', 0.15), 50);
+}
+
+// Bunyi bullseye - fanfare
+function soundBullseye() {
+  initAudio();
+  [523, 659, 784, 1047].forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.25, 'sine', 0.3), i * 120);
+  });
+}
+
+// Bunyi hover butang
+function soundHover() {
+  initAudio();
+  playTone(1200, 0.05, 'sine', 0.08);
+}
+
+// Bunyi tick countdown
+function soundTick() {
+  initAudio();
+  playTone(1000, 0.05, 'square', 0.1);
+}
+
+// Bunyi kemenangan
+function soundVictory() {
+  initAudio();
+  const notes = [523, 587, 659, 784, 880, 1047];
+  notes.forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.3, 'sine', 0.3), i * 150);
+  });
+}
+
+// ============================================================
+// PARTICLE SYSTEM - Zarah latar belakang
+// ============================================================
+const particleCanvas = document.getElementById('particleCanvas');
+const pCtx = particleCanvas.getContext('2d');
+let particles = [];
+
+function resizeParticleCanvas() {
+  particleCanvas.width = window.innerWidth;
+  particleCanvas.height = window.innerHeight;
+}
+resizeParticleCanvas();
+window.addEventListener('resize', resizeParticleCanvas);
+
+function createParticles() {
+  particles = [];
+  const count = Math.min(60, Math.floor(window.innerWidth / 20));
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * particleCanvas.width,
+      y: Math.random() * particleCanvas.height,
+      size: Math.random() * 2.5 + 0.5,
+      speedX: (Math.random() - 0.5) * 0.4,
+      speedY: (Math.random() - 0.5) * 0.3,
+      opacity: Math.random() * 0.5 + 0.1,
+      color: Math.random() > 0.5 ? '0,240,255' : '179,71,234'
+    });
+  }
+}
+createParticles();
+
+function animateParticles() {
+  pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+  particles.forEach(p => {
+    p.x += p.speedX;
+    p.y += p.speedY;
+    if (p.x < 0) p.x = particleCanvas.width;
+    if (p.x > particleCanvas.width) p.x = 0;
+    if (p.y < 0) p.y = particleCanvas.height;
+    if (p.y > particleCanvas.height) p.y = 0;
+    pCtx.beginPath();
+    pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    pCtx.fillStyle = `rgba(${p.color},${p.opacity})`;
+    pCtx.fill();
+  });
+  // Lukis garisan sambung antara zarah berdekatan
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 120) {
+        pCtx.beginPath();
+        pCtx.moveTo(particles[i].x, particles[i].y);
+        pCtx.lineTo(particles[j].x, particles[j].y);
+        pCtx.strokeStyle = `rgba(0,240,255,${0.08 * (1 - dist / 120)})`;
+        pCtx.lineWidth = 0.5;
+        pCtx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// ============================================================
+// CONFETTI SYSTEM
+// ============================================================
+const confettiCanvas = document.getElementById('confettiCanvas');
+const cCtx = confettiCanvas.getContext('2d');
+let confettis = [];
+
+function resizeConfetti() {
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+}
+resizeConfetti();
+window.addEventListener('resize', resizeConfetti);
+
+function spawnConfetti(count) {
+  const colors = ['#00f0ff', '#b347ea', '#ffd700', '#00ff88', '#ff3366', '#ff8c00'];
+  for (let i = 0; i < count; i++) {
+    confettis.push({
+      x: Math.random() * confettiCanvas.width,
+      y: -20,
+      w: Math.random() * 8 + 4,
+      h: Math.random() * 6 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speedY: Math.random() * 3 + 2,
+      speedX: (Math.random() - 0.5) * 3,
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 10,
+      opacity: 1
+    });
+  }
+}
+
+function animateConfetti() {
+  cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  confettis = confettis.filter(c => c.opacity > 0.01);
+  confettis.forEach(c => {
+    c.x += c.speedX;
+    c.y += c.speedY;
+    c.rotation += c.rotSpeed;
+    if (c.y > confettiCanvas.height + 20) c.opacity = 0;
+    cCtx.save();
+    cCtx.translate(c.x, c.y);
+    cCtx.rotate(c.rotation * Math.PI / 180);
+    cCtx.globalAlpha = c.opacity;
+    cCtx.fillStyle = c.color;
+    cCtx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+    cCtx.restore();
+  });
+  requestAnimationFrame(animateConfetti);
+}
+animateConfetti();
+
+// ============================================================
+// DARTBOARD - Lukis dan animasi dart menggunakan Canvas
+// ============================================================
+const dartCanvas = document.getElementById('dartboardCanvas');
+const dCtx = dartCanvas.getContext('2d');
+let dartHits = []; // Simpan posisi dart yang telah terkena
+let dartAnimating = false;
+let dartAnimFrame = null;
+
+// Zon dart dan markah: { radius, points, color, label }
+const DART_ZONES = [
+  { rPct: 1.0, pts: 1, color: '#1a1a3e', ring: '#2a2a5e', label: 'Luar' },
+  { rPct: 0.78, pts: 3, color: '#1a2a4e', ring: '#2a4a6e', label: 'Tengah Luar' },
+  { rPct: 0.56, pts: 5, color: '#2a1a4e', ring: '#4a2a6e', label: 'Tengah' },
+  { rPct: 0.34, pts: 7, color: '#3a1a3e', ring: '#6a2a5e', label: 'Ring Kecil' },
+  { rPct: 0.14, pts: 10, color: '#4a1a1e', ring: '#8a2a2e', label: 'Bullseye' }
+];
+
+function drawDartboard(hitPos, hitGlow) {
+  const w = dartCanvas.width;
+  const h = dartCanvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const maxR = Math.min(cx, cy) - 10;
+
+  dCtx.clearRect(0, 0, w, h);
+
+  // Lukis latar bulatan gelap
+  dCtx.beginPath();
+  dCtx.arc(cx, cy, maxR + 5, 0, Math.PI * 2);
+  dCtx.fillStyle = '#0a0a1a';
+  dCtx.fill();
+
+  // Lukis setiap zon dari luar ke dalam
+  DART_ZONES.forEach((zone, i) => {
+    const r = maxR * zone.rPct;
+    // Isi zon
+    dCtx.beginPath();
+    dCtx.arc(cx, cy, r, 0, Math.PI * 2);
+    dCtx.fillStyle = zone.color;
+    dCtx.fill();
+    dCtx.strokeStyle = zone.ring;
+    dCtx.lineWidth = 2;
+    dCtx.stroke();
+
+    // Label markah
+    if (i < 4) {
+      const labelR = maxR * (DART_ZONES[i + 1].rPct + zone.rPct) / 2;
+      dCtx.fillStyle = 'rgba(255,255,255,0.3)';
+      dCtx.font = '11px Orbitron';
+      dCtx.textAlign = 'center';
+      dCtx.fillText(zone.pts + ' pts', cx + labelR, cy - 4);
+    }
+  });
+
+  // Bullseye label
+  dCtx.fillStyle = 'rgba(255,255,255,0.6)';
+  dCtx.font = 'bold 13px Orbitron';
+  dCtx.textAlign = 'center';
+  dCtx.textBaseline = 'middle';
+  dCtx.fillText('10', cx, cy);
+
+  // Bulatan tengah bercahaya
+  const bullR = maxR * 0.14;
+  const glowGrad = dCtx.createRadialGradient(cx, cy, 0, cx, cy, bullR * 2);
+  glowGrad.addColorStop(0, 'rgba(255,215,0,0.3)');
+  glowGrad.addColorStop(1, 'rgba(255,215,0,0)');
+  dCtx.beginPath();
+  dCtx.arc(cx, cy, bullR * 2, 0, Math.PI * 2);
+  dCtx.fillStyle = glowGrad;
+  dCtx.fill();
+
+  // Lukis dart yang telah terkena sebelum ini
+  dartHits.forEach(h => {
+    drawDartPin(cx + h.x, cy + h.y);
+  });
+
+  // Lukis dart baru dengan kesan cahaya
+  if (hitPos) {
+    // Kesan cahaya terkena
+    if (hitGlow) {
+      const glowR = 30;
+      const hGrad = dCtx.createRadialGradient(cx + hitPos.x, cy + hitPos.y, 0, cx + hitPos.x, cy + hitPos.y, glowR);
+      hGrad.addColorStop(0, 'rgba(0,255,136,0.6)');
+      hGrad.addColorStop(0.5, 'rgba(0,255,136,0.15)');
+      hGrad.addColorStop(1, 'rgba(0,255,136,0)');
+      dCtx.beginPath();
+      dCtx.arc(cx + hitPos.x, cy + hitPos.y, glowR, 0, Math.PI * 2);
+      dCtx.fillStyle = hGrad;
+      dCtx.fill();
+    }
+    drawDartPin(cx + hitPos.x, cy + hitPos.y);
+  }
+}
+
+function drawDartPin(x, y) {
+  // Badan dart
+  dCtx.save();
+  dCtx.translate(x, y);
+  // Pin
+  dCtx.beginPath();
+  dCtx.arc(0, 0, 4, 0, Math.PI * 2);
+  dCtx.fillStyle = '#ff3366';
+  dCtx.fill();
+  dCtx.strokeStyle = '#fff';
+  dCtx.lineWidth = 1.5;
+  dCtx.stroke();
+  // Ekor dart
+  dCtx.beginPath();
+  dCtx.moveTo(-3, -4);
+  dCtx.lineTo(0, -12);
+  dCtx.lineTo(3, -4);
+  dCtx.fillStyle = 'rgba(0,240,255,0.7)';
+  dCtx.fill();
+  dCtx.restore();
+}
+
+// Animasi dart terbang
+function animateDartThrow(targetX, targetY, callback) {
+  dartAnimating = true;
+  soundDartThrow();
+
+  const w = dartCanvas.width;
+  const cx = w / 2;
+  const cy = dartCanvas.height / 2;
+  const maxR = Math.min(cx, cy) - 10;
+
+  // Kedudukan permulaan dart (bawah skrin)
+  let startX = 0;
+  let startY = maxR + 60;
+  let progress = 0;
+  const duration = 600; // ms
+  const startTime = performance.now();
+
+  // Sudut putaran dart
+  let rotation = 0;
+
+  function animate(now) {
+    progress = Math.min(1, (now - startTime) / duration);
+    // Easing: cepat di awal, perlahan di akhir
+    const eased = 1 - Math.pow(1 - progress, 3);
+
+    const currentX = startX + (targetX - startX) * eased;
+    const currentY = startY + (targetY - startY) * eased;
+    rotation += 0.3;
+
+    // Lukis semula dartboard
+    drawDartboard(null, false);
+
+    // Lukis dart terbang
+    dCtx.save();
+    dCtx.translate(cx + currentX, cy + currentY);
+    dCtx.rotate(rotation);
+    // Badan dart terbang
+    dCtx.beginPath();
+    dCtx.moveTo(0, -15);
+    dCtx.lineTo(-4, 5);
+    dCtx.lineTo(0, 2);
+    dCtx.lineTo(4, 5);
+    dCtx.closePath();
+    dCtx.fillStyle = '#c0c0c0';
+    dCtx.fill();
+    // Hujung dart
+    dCtx.beginPath();
+    dCtx.arc(0, -15, 2, 0, Math.PI * 2);
+    dCtx.fillStyle = '#ff3366';
+    dCtx.fill();
+    // Ekor
+    dCtx.beginPath();
+    dCtx.moveTo(-6, 5);
+    dCtx.lineTo(0, 18);
+    dCtx.lineTo(6, 5);
+    dCtx.fillStyle = 'rgba(0,240,255,0.8)';
+    dCtx.fill();
+    dCtx.restore();
+
+    if (progress < 1) {
+      dartAnimFrame = requestAnimationFrame(animate);
+    } else {
+      // Dart sampai
+      dartAnimating = false;
+      soundDartHit();
+      // Simpan hit
+      dartHits.push({ x: targetX, y: targetY });
+      // Lukis semula dengan kesan cahaya
+      drawDartboard({ x: targetX, y: targetY }, true);
+
+      // Kira markah berdasarkan jarak dari pusat
+      const dist = Math.sqrt(targetX * targetX + targetY * targetY);
+      const distPct = dist / maxR;
+      let score = 1;
+      let label = 'Luar';
+      if (distPct <= 0.14) { score = 10; label = 'BULLSEYE!'; }
+      else if (distPct <= 0.34) { score = 7; label = 'Ring Kecil'; }
+      else if (distPct <= 0.56) { score = 5; label = 'Tengah'; }
+      else if (distPct <= 0.78) { score = 3; label = 'Tengah Luar'; }
+      else { score = 1; label = 'Luar'; }
+
+      if (score === 10) soundBullseye();
+
+      callback(score, label);
+    }
+  }
+  dartAnimFrame = requestAnimationFrame(animate);
+}
+
+// Baling dart - tentukan kedudukan rawak dengan kecenderungan
+function throwDart() {
+  if (dartAnimating) return;
+
+  const w = dartCanvas.width;
+  const cx = w / 2;
+  const maxR = Math.min(cx, dartCanvas.height / 2) - 10;
+
+  // Jarak rawak dari pusat - kecenderungan sederhana
+  const angle = Math.random() * Math.PI * 2;
+  // Menggunakan taburan yang memberi peluang lebih tinggi di tengah
+  const rPct = Math.pow(Math.random(), 0.6) * 0.95;
+  const targetX = Math.cos(angle) * maxR * rPct;
+  const targetY = Math.sin(angle) * maxR * rPct;
+
+  animateDartThrow(targetX, targetY, (score, label) => {
+    // Paparkan markah dart
+    const resultEl = document.getElementById('dartResult');
+    resultEl.textContent = '+' + score + ' ' + label;
+    resultEl.className = 'dart-result hit';
+    if (score === 10) resultEl.className = 'dart-result bullseye';
+
+    // Tambah markah ke pasukan semasa
+    const team = G.currentTeam === 'A' ? G.teamA : G.teamB;
+    team.score += score;
+    updateScoreDisplay();
+
+    // Cek bonus streak
+    team.streak++;
+    if (team.streak === 3) {
+      team.score += 30;
+      showToast('COMBO STRIKE! +30 bonus', 'success');
+      spawnConfetti(30);
+    } else if (team.streak === 5) {
+      team.score += 60;
+      showToast('HOT STREAK! +60 bonus', 'success');
+      spawnConfetti(50);
+    }
+
+    G.dartCount++;
+
+    // Jika Double Dart dan belum baling kali kedua
+    if (G.doubleDart && G.dartCount < 2) {
+      document.getElementById('dartBtn').style.display = 'inline-flex';
+      document.getElementById('dartBtn').innerHTML = '<i class="fas fa-bullseye"></i> BALING DART KE-2';
+    } else {
+      // Tamat giliran dart
+      setTimeout(() => {
+        nextQuestion();
+      }, 1500);
+    }
+  });
+}
+
+// Baling dart secara manual (butang)
+function throwDartManual() {
+  document.getElementById('dartBtn').style.display = 'none';
+  throwDart();
+}
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ============================================================
+// SUBJECT SELECTION
+// ============================================================
+function selectSubject(subj) {
+  initAudio();
+  soundHover();
+  G.subject = subj;
+
+  // Tetapkan label subjek
+  const labels = {
+    ask_t1: 'ASK Tingkatan 1',
+    ask_t2: 'ASK Tingkatan 2',
+    ask_t3: 'ASK Tingkatan 3',
+    rbt_t3: 'RBT Tingkatan 3'
+  };
+  document.getElementById('subjectLabel').textContent = labels[subj] || subj;
+  showScreen('setupScreen');
+}
+
+// ============================================================
+// GAME START - Mula permainan
+// ============================================================
+function startGame() {
+  initAudio();
+
+  // Baca tetapan
+  G.teamA.name = document.getElementById('teamAName').value || 'K1';
+  G.teamB.name = document.getElementById('teamBName').value || 'K2';
+  G.timerMax = parseInt(document.getElementById('timerSetting').value) || 30;
+  G.totalQ = Math.min(parseInt(document.getElementById('questionCount').value) || 15, 50);
+  G.timer = G.timerMax;
+
+  // Reset skor
+  G.teamA.score = 0;
+  G.teamB.score = 0;
+  G.teamA.streak = 0;
+  G.teamB.streak = 0;
+  G.currentQ = 0;
+  G.currentTeam = 'A';
+  G.paused = false;
+  G.answered = false;
+  dartHits = [];
+
+  // Ambil soalan rawak dari bank
+  const bank = QUESTIONS[G.subject] || [];
+  if (bank.length === 0) {
+    showToast('Tiada soalan untuk subjek ini!', 'error');
+    return;
+  }
+
+  // Kacau soalan dan ambil jumlah yang diperlukan
+  const shuffled = [...bank].sort(() => Math.random() - 0.5);
+  G.questions = shuffled.slice(0, Math.min(G.totalQ, shuffled.length));
+  G.totalQ = G.questions.length;
+
+  // Kemas kini paparan
+  document.getElementById('teamALabel').textContent = G.teamA.name;
+  document.getElementById('teamBLabel').textContent = G.teamB.name;
+  updateScoreDisplay();
+
+  // Papar countdown animasi
+  showScreen('gameScreen');
+  startCountdown(() => {
+    loadQuestion();
+  });
+}
+
+// Countdown animasi sebelum mula
+function startCountdown(callback) {
+  const overlay = document.getElementById('countdownOverlay');
+  const numEl = document.getElementById('countdownNum');
+  overlay.classList.add('show');
+  let count = 3;
+  numEl.textContent = count;
+
+  const interval = setInterval(() => {
+    count--;
+    if (count > 0) {
+      numEl.textContent = count;
+      numEl.style.animation = 'none';
+      void numEl.offsetWidth; // trigger reflow
+      numEl.style.animation = 'countPop .8s ease';
+      soundTick();
+    } else {
+      numEl.textContent = 'MULA!';
+      numEl.style.color = 'var(--green)';
+      soundCorrect();
+      clearInterval(interval);
+      setTimeout(() => {
+        overlay.classList.remove('show');
+        numEl.style.color = 'var(--cyan)';
+        callback();
+      }, 800);
+    }
+  }, 1000);
+}
+
+// ============================================================
+// QUESTION LOADING - Muat soalan
+// ============================================================
+function loadQuestion() {
+  if (G.currentQ >= G.totalQ) {
+    endGame();
+    return;
+  }
+
+  const q = G.questions[G.currentQ];
+  G.answered = false;
+  G.dartThrown = false;
+  G.doubleDart = q.dd || false;
+  G.dartCount = 0;
+
+  // Kemas kini metadata soalan
+  document.getElementById('qNumber').textContent = 'S' + (G.currentQ + 1);
+  const diffEl = document.getElementById('qDiff');
+  diffEl.textContent = q.d.toUpperCase();
+  diffEl.className = 'q-diff ' + q.d.toLowerCase();
+
+  const ddEl = document.getElementById('qDD');
+  ddEl.style.display = q.dd ? 'inline-block' : 'none';
+
+  // Kemas kini teks soalan
+  document.getElementById('qText').textContent = q.q;
+
+  // Kemas kini pilihan jawapan
+  const optGrid = document.getElementById('optionsGrid');
+  optGrid.innerHTML = '';
+  const labels = ['A', 'B', 'C', 'D'];
+  q.o.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-label">${labels[i]}</span>${opt}`;
+    btn.onclick = () => selectAnswer(i);
+    btn.setAttribute('role', 'button');
+    btn.setAttribute('aria-label', labels[i] + ': ' + opt);
+    optGrid.appendChild(btn);
+  });
+
+  // Kemas kini progress
+  document.getElementById('questionProgress').textContent = `${G.currentQ + 1}/${G.totalQ}`;
+  document.getElementById('progressFill').style.width = `${(G.currentQ / G.totalQ) * 100}%`;
+
+  // Kemas kini giliran pasukan
+  updateTeamTurn();
+
+  // Lukis semula dartboard
+  drawDartboard(null, false);
+
+  // Reset dart result
+  document.getElementById('dartResult').textContent = '';
+  document.getElementById('dartResult').className = 'dart-result';
+  document.getElementById('dartBtn').style.display = 'none';
+
+  // Mula timer
+  startTimer();
+}
+
+// ============================================================
+// TIMER - Pengiraan masa
+// ============================================================
+function startTimer() {
+  clearInterval(G.timerInterval);
+  G.timer = G.timerMax;
+  const timerEl = document.getElementById('qTimer');
+  timerEl.textContent = G.timer;
+  timerEl.classList.remove('danger');
+
+  G.timerInterval = setInterval(() => {
+    if (G.paused) return;
+    G.timer--;
+    timerEl.textContent = G.timer;
+
+    if (G.timer <= 5) {
+      timerEl.classList.add('danger');
+      soundTick();
+    }
+
+    if (G.timer <= 0) {
+      clearInterval(G.timerInterval);
+      // Masa habis - jawapan salah
+      if (!G.answered) {
+        handleWrongAnswer();
+      }
+    }
+  }, 1000);
+}
+
+// ============================================================
+// ANSWER SELECTION - Pilih jawapan
+// ============================================================
+function selectAnswer(index) {
+  if (G.answered || G.paused) return;
+  G.answered = true;
+  clearInterval(G.timerInterval);
+
+  const q = G.questions[G.currentQ];
+  const buttons = document.querySelectorAll('.option-btn');
+  buttons.forEach(b => b.classList.add('disabled'));
+
+  if (index === q.a) {
+    // Jawapan BETUL
+    buttons[index].classList.add('correct');
+    soundCorrect();
+    showFeedback(true);
+
+    // Pasukan semasa dapat streak
+    const team = G.currentTeam === 'A' ? G.teamA : G.teamB;
+
+    // Baling dart
+    setTimeout(() => {
+      hideFeedback();
+      throwDart();
+    }, 1200);
+  } else {
+    // Jawapan SALAH
+    buttons[index].classList.add('wrong');
+    buttons[q.a].classList.add('correct');
+    soundWrong();
+    showFeedback(false);
+    handleWrongAnswer();
+  }
+}
+
+function handleWrongAnswer() {
+  // Reset streak pasukan semasa
+  const team = G.currentTeam === 'A' ? G.teamA : G.teamB;
+  team.streak = 0;
+
+  // Tukar giliran
+  setTimeout(() => {
+    hideFeedback();
+    // Pasukan lawan boleh curi
+    G.currentTeam = G.currentTeam === 'A' ? 'B' : 'A';
+    nextQuestion();
+  }, 1800);
+}
+
+// ============================================================
+// FEEDBACK - Maklum balas betul/salah
+// ============================================================
+function showFeedback(isCorrect) {
+  const overlay = document.getElementById('feedbackOverlay');
+  const text = document.getElementById('feedbackText');
+  const sub = document.getElementById('feedbackSub');
+
+  if (isCorrect) {
+    text.textContent = 'BETUL!';
+    text.className = 'feedback-text correct-fb';
+    sub.textContent = 'Baling dart sekarang!';
+    spawnConfetti(20);
+  } else {
+    text.textContent = 'SALAH!';
+    text.className = 'feedback-text wrong-fb';
+    sub.textContent = 'Giliran bertukar...';
+    // Screen shake
+    document.getElementById('gameScreen').style.animation = 'shake .4s';
+    setTimeout(() => {
+      document.getElementById('gameScreen').style.animation = '';
+    }, 400);
+  }
+  overlay.classList.add('show');
+}
+
+function hideFeedback() {
+  document.getElementById('feedbackOverlay').classList.remove('show');
+}
+
+// ============================================================
+// NEXT QUESTION - Soalan seterusnya
+// ============================================================
+function nextQuestion() {
+  G.currentQ++;
+  // Tukar giliran pasukan
+  G.currentTeam = G.currentTeam === 'A' ? 'B' : 'A';
+  loadQuestion();
+}
+
+// ============================================================
+// UPDATE DISPLAYS - Kemas kini paparan
+// ============================================================
+function updateScoreDisplay() {
+  document.getElementById('teamAScore').textContent = G.teamA.score;
+  document.getElementById('teamBScore').textContent = G.teamB.score;
+}
+
+function updateTeamTurn() {
+  const cardA = document.getElementById('teamACard');
+  const cardB = document.getElementById('teamBCard');
+  if (G.currentTeam === 'A') {
+    cardA.classList.add('active-team');
+    cardB.classList.remove('active-team');
+  } else {
+    cardB.classList.add('active-team');
+    cardA.classList.remove('active-team');
+  }
+}
+
+// ============================================================
+// END GAME - Tamat permainan
+// ============================================================
+function endGame() {
+  clearInterval(G.timerInterval);
+
+  // Tentukan pemenang
+  let winner = '';
+  let crown = '&#x1F3C6;';
+  if (G.teamA.score > G.teamB.score) {
+    winner = G.teamA.name + ' MENANG!';
+    document.getElementById('resultTeamA').classList.add('winner-team');
+    document.getElementById('resultTeamB').classList.remove('winner-team');
+  } else if (G.teamB.score > G.teamA.score) {
+    winner = G.teamB.name + ' MENANG!';
+    document.getElementById('resultTeamB').classList.add('winner-team');
+    document.getElementById('resultTeamA').classList.remove('winner-team');
+  } else {
+    winner = 'SERI!';
+    crown = '&#x1F91D;';
+  }
+
+  document.getElementById('resultCrown').innerHTML = crown;
+  document.getElementById('resultWinner').textContent = winner;
+  document.getElementById('resultALabel').textContent = G.teamA.name;
+  document.getElementById('resultBLabel').textContent = G.teamB.name;
+  document.getElementById('resultAScore').textContent = G.teamA.score;
+  document.getElementById('resultBScore').textContent = G.teamB.score;
+
+  showScreen('resultScreen');
+  soundVictory();
+  spawnConfetti(80);
+}
+
+// ============================================================
+// GAME CONTROLS - Kawalan permainan
+// ============================================================
+function togglePause() {
+  G.paused = !G.paused;
+  document.getElementById('pauseOverlay').classList.toggle('show', G.paused);
+  soundHover();
+}
+
+function restartGame() {
+  G.paused = false;
+  clearInterval(G.timerInterval);
+  document.getElementById('pauseOverlay').classList.remove('show');
+  dartHits = [];
+  startGame();
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function setVolume(val) {
+  G.volume = val / 100;
+  G.muted = val === 0;
+  updateMuteBtn();
+}
+
+function toggleMute() {
+  G.muted = !G.muted;
+  const slider = document.getElementById('volumeSlider');
+  if (G.muted) {
+    slider.value = 0;
+  } else {
+    slider.value = G.volume * 100 || 60;
+    G.volume = slider.value / 100;
+  }
+  updateMuteBtn();
+}
+
+function updateMuteBtn() {
+  const icon = G.muted ? 'fa-volume-mute' : 'fa-volume-up';
+  document.getElementById('muteBtn').innerHTML = `<i class="fas ${icon}"></i>`;
+  document.getElementById('soundIcon').className = `fas ${icon}`;
+}
+
+// ============================================================
+// RANDOM PICKER WHEEL - Roda pilih murid rawak
+// ============================================================
+let pickerSpinning = false;
+const pickerNames = ['Ahmad', 'Siti', 'Raju', 'Mei Ling', 'Hassan', 'Aisyah', 'Kumar', 'Farah', 'Zain', 'Nurul', 'Ali', 'Diana', 'Rizal', 'Lina', 'Faiz', 'Salina'];
+
+function openPicker() {
+  document.getElementById('pickerOverlay').classList.add('show');
+  drawPickerWheel(0);
+}
+
+function closePicker() {
+  document.getElementById('pickerOverlay').classList.remove('show');
+}
+
+function drawPickerWheel(rotation) {
+  const canvas = document.getElementById('pickerCanvas');
+  const ctx = canvas.getContext('2d');
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const r = cx - 10;
+  const count = pickerNames.length;
+  const sliceAngle = (Math.PI * 2) / count;
+  const colors = ['#0d3b66','#1a5276','#0e6655','#7d3c98','#c0392b','#d4ac0d','#117864','#6c3483','#1b4f72','#196f3d','#922b21','#b7950b','#1a5276','#0e6655','#7d3c98','#c0392b'];
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation);
+
+  for (let i = 0; i < count; i++) {
+    const startAngle = i * sliceAngle;
+    const endAngle = startAngle + sliceAngle;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, r, startAngle, endAngle);
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Teks nama
+    ctx.save();
+    ctx.rotate(startAngle + sliceAngle / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 9px Rajdhani';
+    ctx.fillText(pickerNames[i], r - 8, 3);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // Panah penunjuk
+  ctx.beginPath();
+  ctx.moveTo(cx + r + 5, cy);
+  ctx.lineTo(cx + r - 12, cy - 8);
+  ctx.lineTo(cx + r - 12, cy + 8);
+  ctx.closePath();
+  ctx.fillStyle = '#ff3366';
+  ctx.fill();
+}
+
+function spinPicker() {
+  if (pickerSpinning) return;
+  pickerSpinning = true;
+  document.getElementById('pickerResult').textContent = '';
+  soundDartThrow();
+
+  const spinDuration = 3000;
+  const totalRotation = Math.random() * Math.PI * 2 + Math.PI * 8; // 4+ pusingan
+  const startTime = performance.now();
+  const startRotation = 0;
+
+  function animateSpin(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(1, elapsed / spinDuration);
+    // Easing keluar
+    const eased = 1 - Math.pow(1 - progress, 4);
+    const currentRotation = startRotation + totalRotation * eased;
+
+    drawPickerWheel(currentRotation);
+
+    if (progress < 1) {
+      requestAnimationFrame(animateSpin);
+    } else {
+      // Tentukan nama yang dipilih
+      const count = pickerNames.length;
+      const sliceAngle = (Math.PI * 2) / count;
+      const normalizedAngle = (Math.PI * 2 - (currentRotation % (Math.PI * 2))) % (Math.PI * 2);
+      const index = Math.floor(normalizedAngle / sliceAngle) % count;
+      document.getElementById('pickerResult').textContent = pickerNames[index];
+      pickerSpinning = false;
+      soundCorrect();
+    }
+  }
+  requestAnimationFrame(animateSpin);
+}
+
+// ============================================================
+// TOAST NOTIFICATIONS
+// ============================================================
+function showToast(message, type) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + (type || 'info');
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => toast.remove(), 400);
+  }, 3000);
+}
+
+// ============================================================
+// HOVER SOUND - Bunyi apabila hover atas butang
+// ============================================================
+document.addEventListener('mouseover', (e) => {
+  if (e.target.closest('.subject-card, .btn, .option-btn, .header-btn, .fab')) {
+    soundHover();
+  }
+});
+
+// Keyboard support untuk subject cards
+document.querySelectorAll('.subject-card').forEach(card => {
+  card.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      card.click();
+    }
+  });
+});
+
+// ============================================================
+// INITIALIZATION - Memulakan aplikasi
+// ============================================================
+window.addEventListener('load', () => {
+  // Lukis dartboard awal
+  drawDartboard(null, false);
+
+  // Sembunyikan loading screen
+  setTimeout(() => {
+    document.getElementById('loadingScreen').classList.add('hide');
+    showScreen('menuScreen');
+  }, 1500);
+});
+
+// Pastikan audio dimulakan dengan interaksi pertama
+document.addEventListener('click', () => initAudio(), { once: true });
+</script>
+</body>
+</html>
